@@ -1,108 +1,108 @@
 const app = require('express')();
-const server = require('http').createServer(app);
-const io = require('socket.io');
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
+
 const MongoClient = require('mongodb').MongoClient;
 const dbUrl = 'mongodb://localhost:27017/sevensDB';
 const dbName = 'sevensDB';
+
+const gameRouter = require('./routers/games');
+const userRouter = require('./routers/users');
+
 const bodyParser = require('body-parser');
 
-let idGen = 0;
-function iterId() {
-	return idGen++
+app.set('socketio', io);
+
+
+
+function* idGen() {
+  let index = 0;
+  while (index < index + 1) {
+    yield index++
+  }
 }
 
-const client = new MongoClient(dbUrl);
-const ws = io.listen(server);
-let _db = null;
-
-
-client.connect((err, client) => {
-	// reset db for dev
-	client.db('sevensDB').dropDatabase()
-	_db = client.db('sevensDB');
-})
+let _idGenerator = idGen();
 
 app.use((req, res, next) => {
-	res.locals.db = _db;
-	next();
+  res.locals.idGen = _idGenerator;
+  next();
+})
+
+const client = new MongoClient(dbUrl);
+let _db = null;
+
+client.connect((err, client) => {
+  // reset db for dev
+  client.db('sevensDB').dropDatabase();
+  _db = client.db('sevensDB');
+});
+
+app.use((req, res, next) => {
+  res.locals.db = _db;
+  next();
 });
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+app.use('/api/games', gameRouter());
+app.use('/api/users', userRouter());
 
 
-ws.on('connection', (sock) => {
-	console.log('client connected')
-})
+class Game {
+	constructor(gameId, creator) {
+		this.gameId = gameId;
+		this.creator = creator;
+		this.players = [creator];
+		this.room = `/game/${gameId}`;
+	}
+}
+
+
+io.on('connection', (socket) => {
+	console.log('hello socket');
+  socket.on('newRoom', (room) => {
+    socket.join(room)
+  })
+});
 
 app.get('/api', (req, res) => {
-	res.json({"success": true})
+  res.json({ success: true });
+});
+
+
+app.get('/api/games/:gameid', async (req, res) => {
+	console.log(req.params.gameid)
+	const game = await res.locals.db.collection('games').findOne({_id: Number(req.params.gameid)})
+	console.log(game)
 })
 
 
-app.post('/api/games/new', async (req, res) => {
-	console.log(req.body)
-	let user = await res.locals.db.collection('users').find({ name: req.body.userName}).toArray()
-	console.log(user)
+app.post('/api/games/:gameid/start', async (req, res) => {
+  const idAsNum = Number(req.params.gameid)
+  let response = await res.locals.db.collection('games')
+    .find({ _id: idAsNum }).toArray()
 
-
-	const data = {
-		_id: iterId(),
-		isOpen: true,
-		creator_id: user._id,
-		player_ids: [user._id],
-		date: new Date
-	}
-
-	let newRoom = ws.of(`/game/${data._id}`);
-	newRoom.on('connection', (socket) => {
-		console.log('a player connected');
-	});
-
-	res.locals.db.collection('games').insertOne(data, (err, dbres) => {
-		if (err != null) {
-			res.json({"success": false, error: err })
-			return
-		}
-
-		res.json({"success": true})
-		return
-	});
+  const data = {
+    _id: iterId(),
+    game_id: response._id,
+    winner: null,
+    astericks_earned: null
+  }
+  if (response[0]) {
+    let round = res.locals.db.collection('rounds')
+      .insertOne(data, (err, dbRes) => {
+        if (err != null) {
+          res.json({ success: false, error: err })
+          return
+        }
+        res.json({ success: true })
+        return
+      })
+  }
 })
 
-app.get('/api/games', async (req, res) => {
-	let games = await res.locals.db.collection('games').find( { isOpen: true } ).toArray()
-	res.json(games)
-	return
-
-})
-
-app.post('/api/games/:gameid/join', async (req, res) => {
-	let idAsNum = Number(req.params.gameid);
-	res.locals.db.collection('games').findOneAndUpdate({ _id: idAsNum }, { $push: {player_ids: 2} } , (err, object) => {
-		if (err != null) {
-			res.json({success: false, error: err})
-			return
-		}
-		res.json({success: true})
-	})
-})
-
-app.post('/api/users/new', async (req, res) => {
-	console.log(req.body)
-	let data = {
-		_id: iterId(),
-		name: req.body.userName,
-		password: req.body.password
-	}
-
-	res.locals.db.collection('users').insertOne(data, (err, dbres) => {
-		if (err != null) {
-			res.json({success: false, err: err})
-			return
-		}
-		res.json({success: true})
-	})
-})
-server.listen(3000);
+http.listen(3000, () => {
+  console.log('listening on 3000')
+});

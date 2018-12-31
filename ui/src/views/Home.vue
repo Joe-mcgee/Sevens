@@ -27,6 +27,8 @@
           <v-btn @click="joinLobby(lobby.item._id)">
             Join Lobby
           </v-btn>
+          <v-btn @click="startGame(lobby.item._id)">Start
+          </v-btn>
         </td>
       </template>
     </v-data-table>
@@ -41,6 +43,7 @@ export default {
       user: {
         userName: null,
         password: null,
+        playerId: null,
       },
       /* beautify ignore:start */
       lobbyHeaders: [{
@@ -56,6 +59,26 @@ export default {
         value: 'players',
       },
       ],
+      playerHeaders: [{
+        text: 'Avatar',
+        aligh: 'left',
+        sortable: false,
+        value: 'avatar',
+      },
+      {
+        text: 'Player Name',
+        align: 'left',
+        sortable: true,
+        value: 'name',
+      },
+      {
+        text: '* / game',
+        align: 'left',
+        sortable: true,
+        value: 'astericksPerGame',
+      },
+      ],
+      players: [],
       lobbies: [],
       gameSocket: false,
       defaultSocket: false,
@@ -66,6 +89,13 @@ export default {
     connect() {
       this.defaultSocket = true;
     },
+    roomCreated: function(data) {
+      this.$socket.emit("newRoom", data)
+      this.getLobbies();
+    },
+    joinedLobby(data) {
+      console.log(data)
+    }
   },
   created() {
     this.getLobbies();
@@ -73,27 +103,41 @@ export default {
   methods: {
     async registerNewUser() {
       const response = await axios.post('/api/users/new', this.user);
-      console.log(response);
+      this.user.playerId = response.data.playerId
     },
     async newLobby() {
       const response = await axios.post('/api/games/new', { userName: this.user.userName });
-      if (response.data.success === true) {
-        this.getLobbies();
-      }
     },
+
     async getLobbies() {
       const getResponse = await axios.get('/api/games');
       getResponse.data.forEach((openLobby) => {
         this.lobbies.push(openLobby);
       });
+
+      const unique = new Map(this.lobbies.map(obj => [obj._id, obj]));
+      const uniques = Array.from(unique.values());
+      this.lobbies = uniques;
     },
     async joinLobby(gameId) {
-      const response = await axios.post(`/api/games/${gameId}/join`);
+      const response = await axios.post(`/api/games/${gameId}/join`, {playerId: this.user.playerId});
       if (response.data.success === true) {
         this.lobbies.forEach((lobby, i) => {
           if (lobby._id === gameId) {
             this.lobbies[i].player_ids.push(2);
           }
+        });
+      }
+    },
+    async startGame(gameId) {
+      const response = await axios.post(`/api/games/${gameId}/start`);
+
+      if (response.data.success === true) {
+        this.$router.push({
+          name: 'games',
+          query: {
+            gameId,
+          },
         });
       }
     },
