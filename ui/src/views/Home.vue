@@ -89,12 +89,27 @@ export default {
     connect() {
       this.defaultSocket = true;
     },
-    roomCreated: function(data) {
-      this.$socket.emit("newRoom", data)
+    createRoom: function(data) {
+      console.log(data)
+      this.$socket.emit("createRoom", data.address)
       this.getLobbies();
     },
-    joinedLobby(data) {
-      console.log(data)
+    roomJoin(data) {
+      this.$socket.emit("joinRoom", data.address)
+      this.getLobbies();
+    },
+    joinRoom(data) {
+      console.log('a player joined the lobby')
+      this.getLobbies();
+    },
+    startGame(data) {
+      console.log('game started! :D')
+      this.$router.push({
+        name: 'games',
+        query: {
+          gameId: data.gameId
+        },
+      });
     }
   },
   created() {
@@ -120,7 +135,7 @@ export default {
       this.lobbies = uniques;
     },
     async joinLobby(gameId) {
-      const response = await axios.post(`/api/games/${gameId}/join`, {playerId: this.user.playerId});
+      const response = await axios.post(`/api/games/${gameId}/join`, { playerId: this.user.playerId });
       if (response.data.success === true) {
         this.lobbies.forEach((lobby, i) => {
           if (lobby._id === gameId) {
@@ -131,15 +146,6 @@ export default {
     },
     async startGame(gameId) {
       const response = await axios.post(`/api/games/${gameId}/start`);
-
-      if (response.data.success === true) {
-        this.$router.push({
-          name: 'games',
-          query: {
-            gameId,
-          },
-        });
-      }
     },
   },
 };

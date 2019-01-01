@@ -62,8 +62,14 @@ class Game {
 
 io.on('connection', (socket) => {
 	console.log('hello socket');
-  socket.on('newRoom', (room) => {
+  socket.on('createRoom', (room) => {
     socket.join(room)
+    console.log('room created')
+  })
+  socket.on('joinRoom', (room) => {
+    socket.join(room)
+    console.log('room joined triggered')
+    socket.in(room).emit("playerJoin", "a player joined the lobby");
   })
 });
 
@@ -78,30 +84,6 @@ app.get('/api/games/:gameid', async (req, res) => {
 	console.log(game)
 })
 
-
-app.post('/api/games/:gameid/start', async (req, res) => {
-  const idAsNum = Number(req.params.gameid)
-  let response = await res.locals.db.collection('games')
-    .find({ _id: idAsNum }).toArray()
-
-  const data = {
-    _id: iterId(),
-    game_id: response._id,
-    winner: null,
-    astericks_earned: null
-  }
-  if (response[0]) {
-    let round = res.locals.db.collection('rounds')
-      .insertOne(data, (err, dbRes) => {
-        if (err != null) {
-          res.json({ success: false, error: err })
-          return
-        }
-        res.json({ success: true })
-        return
-      })
-  }
-})
 
 http.listen(3000, () => {
   console.log('listening on 3000')
