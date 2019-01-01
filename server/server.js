@@ -78,11 +78,6 @@ app.get('/api', (req, res) => {
 });
 
 
-app.get('/api/games/:gameid', async (req, res) => {
-	console.log(req.params.gameid)
-	const game = await res.locals.db.collection('games').findOne({_id: Number(req.params.gameid)})
-	console.log(game)
-})
 
 
 http.listen(3000, () => {

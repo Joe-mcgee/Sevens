@@ -106,8 +106,11 @@ export default {
       console.log('game started! :D')
       this.$router.push({
         name: 'games',
+        props: {
+          userId: this.userId,
+        },
         query: {
-          gameId: data.gameId
+          gameId: data.gameId,
         },
       });
     }
