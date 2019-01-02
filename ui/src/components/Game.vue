@@ -19,55 +19,60 @@ import axios from 'axios';
 import Hand from './Hand.vue';
 export default {
   props: {
-    userId: String
+    userId: Number,
+    gameId: String,
   },
 
   data() {
     return {
       deck: null,
       topCard: null,
-      players: null,
+      players: [],
       round: null,
 
     };
   },
   async created() {
-    console.log(this.$route.query.gameId)
-    let gameData = await axios.get(`/api/games/${this.$route.query.gameId}`)
+    let gameData = await axios.get(`/api/games/${this.gameId}`)
 
-    let roundData = await axios.get(`/api/games/${this.$route.query.gameId}/rounds`)
-    console.log(roundData)
-    console.log('api broken?')
-    for (player in gameData.player_ids) {
+    let roundData = await axios.get(`/api/games/${this.gameId}/rounds`)
+    gameData.data.game["player_ids"].forEach((player) => {
       let playerObj = {
         id: player,
         cards: [],
       }
       this.players.push(playerObj);
-      console.log(gameData)
-      this.roundId = gameData.data.roundId
-    }
+    })
+    this.roundId = roundData.data[roundData.data.length - 1]["_id"];
 
   },
   sockets: {
-
+    startTurn(data) {
+      console.log(data)
+    },
   },
   methods: {
     async deal() {
-      let response = await axios.post(`/api/games/${this.$route.query.gameId}/${this.round}/shuffle`, { playerId: this.userId })
+      let response = await axios.post(`/api/games/${this.gameId}/rounds/${this.roundId}/shuffle`, { playerId: this.userId })
       let deck = response.data.deck;
 
       let i = 0;
       while (i < 7) {
-        for (player in this.players) {
+
+        this.players.forEach((player) => {
           player.cards.push(deck.shift());
-          i++;
-        }
+        })
+        i++;
       }
       this.topCard = deck.shift();
       this.deck = deck;
-      this.$socket.in(`/games/${this.$router.query.gameId}`).emit('deal', { deck, topCard: this.topCard })
+      let gameState = await axios.post(`/api/games/${this.gameId}/rounds/${this.roundId}/init`, {
+        players: this.players,
+        deck: this.deck,
+        topCard: this.topCard,
+      });
 
+      console.log(gameState)
     },
     flip() {
       this.stack.push(this.deck.shift());
