@@ -100,8 +100,9 @@ export default {
   methods: {
     async registerNewUser() {
       const response = await axios.post('/api/users/new', this.user);
+      console.log(response.data)
       this.user.playerId = response.data.playerId;
-      this.$emit('addUserToData', this.user);
+      this.$emit('click', this.user);
     },
     async newLobby() {
       await axios.post('/api/games/new', { userName: this.user.userName });

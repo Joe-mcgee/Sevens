@@ -14,7 +14,8 @@ module.exports = () => {
 
   router.post('/new', async (req, res) => {
     let io = req.app.get('socketio');
-    const user = await res.locals.db.collection('users').find({ name: req.body.userName }).toArray();
+    const user = await res.locals.db.collection('users').findOne({ name: req.body.userName })
+    console.log('user', user)
     const data = {
       _id: res.locals.idGen.next().value,
       isOpen: true,
@@ -37,7 +38,7 @@ module.exports = () => {
   router.get('/:gameid', async (req, res) => {
     console.log(req.params.gameid)
     const game = await res.locals.db.collection('games').findOne({ _id: Number(req.params.gameid) })
-    console.log(game)
+    console.log('game', game)
     res.json({ game })
   })
 
@@ -46,6 +47,7 @@ module.exports = () => {
     const idAsNum = Number(req.params.gameid);
     const playerId = req.body.playerId
     res.locals.db.collection('games').findOneAndUpdate({ _id: idAsNum }, { $push: { player_ids: playerId } }, (err, object) => {
+      console.log(object)
       if (err != null) {
         res.json({ success: false, error: err });
         return;
@@ -125,7 +127,7 @@ module.exports = () => {
         console.log(err)
         if (err === null) {
           const address = `/games/${req.params.gameid}`
-          console.log(address)
+          console.log('data', data)
           io.in(address).emit('startTurn', data)
           res.json({ success: true })
           return

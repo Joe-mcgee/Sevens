@@ -16,7 +16,7 @@ app.set('socketio', io);
 
 
 function* idGen() {
-  let index = 0;
+  let index = 1;
   while (index < index + 1) {
     yield index++
   }

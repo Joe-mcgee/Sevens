@@ -1,8 +1,8 @@
 <template>
   <v-container>
     <h1 class=".display-4">Sevens Online</h1>
-    <v-container v-if="lobby">
-      <Lobby />
+    <v-container v-if="lobby" >
+      <Lobby @click="addUserToData"/>
     </v-container>
     <v-container v-if="game">
       <Game :userId="user.playerId" :gameId="currentGame" />

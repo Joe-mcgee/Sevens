@@ -10,6 +10,7 @@
       </v-flex>
     </v-layout>
     <v-footer absolute>
+      <Hand :cards="this.currentPlayer.cards" />
     </v-footer>
   </v-container>
 </template>
@@ -22,12 +23,15 @@ export default {
     userId: Number,
     gameId: String,
   },
-
+  components: {
+    Hand,
+  },
   data() {
     return {
       deck: null,
-      topCard: null,
+      discardPile: null,
       players: [],
+      currentPlayer: {cards: []},
       round: null,
 
     };
@@ -37,6 +41,7 @@ export default {
 
     let roundData = await axios.get(`/api/games/${this.gameId}/rounds`)
     gameData.data.game["player_ids"].forEach((player) => {
+      console.log('gamedataplayer', player)
       let playerObj = {
         id: player,
         cards: [],
@@ -48,7 +53,10 @@ export default {
   },
   sockets: {
     startTurn(data) {
-      console.log(data)
+      this.deck = data.deck;
+      this.players = data.players;
+      this.discardPile = data.discardPile;
+      this.playerHand();
     },
   },
   methods: {
@@ -64,15 +72,24 @@ export default {
         })
         i++;
       }
-      this.topCard = deck.shift();
+      this.discardPile = deck.shift();
       this.deck = deck;
-      let gameState = await axios.post(`/api/games/${this.gameId}/rounds/${this.roundId}/init`, {
+      console.log('this.players', this.players);
+      await axios.post(`/api/games/${this.gameId}/rounds/${this.roundId}/init`, {
         players: this.players,
         deck: this.deck,
-        topCard: this.topCard,
+        topCard: this.discardPile,
       });
 
-      console.log(gameState)
+      
+    },
+    playerHand() {
+      this.players.forEach((player) => {
+        console.log(player)
+        if (player.id == this.userId) {
+          this.currentPlayer = player;
+        }
+      })
     },
     flip() {
       this.stack.push(this.deck.shift());
