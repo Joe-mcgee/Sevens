@@ -49,17 +49,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/api/games', gameRouter());
 app.use('/api/users', userRouter());
 
-
-class Game {
-	constructor(gameId, creator) {
-		this.gameId = gameId;
-		this.creator = creator;
-		this.players = [creator];
-		this.room = `/game/${gameId}`;
-	}
-}
-
-
 io.on('connection', (socket) => {
 	console.log('hello socket');
   socket.on('createRoom', (room) => {

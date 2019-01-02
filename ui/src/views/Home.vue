@@ -1,45 +1,56 @@
 <template>
   <v-container>
     <h1 class=".display-4">Sevens Online</h1>
-    <v-form>
-      <v-container>
-        <v-layout row wrap>
-          <v-flex xs4>
-            <v-text-field label="Name" v-model="user.userName"></v-text-field>
-          </v-flex>
-          <v-flex xs4>
-            <v-text-field label="Password" v-model="user.password">
-            </v-text-field>
-          </v-flex>
-          <v-flex xs4>
-            <v-btn @click="registerNewUser">Submit
+    <v-container v-if="lobby">
+      <v-form>
+        <v-container>
+          <v-layout row wrap>
+            <v-flex xs4>
+              <v-text-field label="Name" v-model="user.userName"></v-text-field>
+            </v-flex>
+            <v-flex xs4>
+              <v-text-field label="Password" v-model="user.password">
+              </v-text-field>
+            </v-flex>
+            <v-flex xs4>
+              <v-btn @click="registerNewUser">Submit
+              </v-btn>
+            </v-flex>
+          </v-layout>
+        </v-container>
+      </v-form>
+      <v-btn @click="newLobby">Create Lobby</v-btn>
+      <v-data-table :headers="lobbyHeaders" :items="lobbies">
+        <template slot="items" slot-scope="lobby">
+          <td>{{lobby.item._id}}</td>
+          <td>{{lobby.item.player_ids.length}}</td>
+          <td>
+            <v-btn @click="joinLobby(lobby.item._id)">
+              Join Lobby
             </v-btn>
-          </v-flex>
-        </v-layout>
-      </v-container>
-    </v-form>
-    <v-btn @click="newLobby">Create Lobby</v-btn>
-    <v-data-table :headers="lobbyHeaders" :items="lobbies">
-      <template slot="items" slot-scope="lobby">
-        <td>{{lobby.item._id}}</td>
-        <td>{{lobby.item.player_ids.length}}</td>
-        <td>
-          <v-btn @click="joinLobby(lobby.item._id)">
-            Join Lobby
-          </v-btn>
-          <v-btn @click="startGame(lobby.item._id)">Start
-          </v-btn>
-        </td>
-      </template>
-    </v-data-table>
+            <v-btn @click="startGame(lobby.item._id)">Start
+            </v-btn>
+          </td>
+        </template>
+      </v-data-table>
+    </v-container>
+    <v-container v-if="game">
+      <Game :userId="user.playerId" :gameId="currentGame" />
+    </v-container>
   </v-container>
 </template>
 <script>
 import axios from 'axios';
-
+import Game from '../components/Game'
 export default {
+  components: {
+    Game
+  },
   data() {
     return {
+      lobby: true,
+      game: false,
+      currentGame: null,
       user: {
         userName: null,
         password: null,
@@ -94,26 +105,18 @@ export default {
       this.$socket.emit("createRoom", data.address)
       this.getLobbies();
     },
-    roomJoin(data) {
-      this.$socket.emit("joinRoom", data.address)
-      this.getLobbies();
-    },
     joinRoom(data) {
+      console.log(data.address, "address")
+      this.$socket.emit("joinRoom", data.address)
       console.log('a player joined the lobby')
       this.getLobbies();
     },
     startGame(data) {
       console.log('game started! :D')
-      this.$router.push({
-        name: 'games',
-        props: {
-          userId: this.userId,
-        },
-        query: {
-          gameId: data.gameId,
-        },
-      });
-    }
+      this.currentGame = data.gameId,
+      this.lobby = false
+      this.game = true
+    },
   },
   created() {
     this.getLobbies();
