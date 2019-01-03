@@ -11,12 +11,12 @@
         </v-flex>
       </v-layout>
     </v-container>
-    <v-container>
+    <v-container v-if="dealed">
       <v-layout row wrap>
         <v-flex xs2>
         </v-flex>
         <v-flex xs4>
-          <Deck :deck="deck" />
+          <Deck :deck="deck" @clicked="addCardToHand" />
         </v-flex>
         <DiscardPile :discardPile="discardPile" />
         <v-flex xs4>
@@ -25,8 +25,8 @@
         </v-flex>
       </v-layout>
     </v-container>
-    <v-footer fixed height="175px">
-      <Hand :cards="this.currentPlayer.cards" />
+    <v-footer class="footer" fixed height="175px">
+      <Hand :cards="this.currentPlayer.cards" @clicked="drawCard(data)" />
     </v-footer>
   </v-container>
 </template>
@@ -118,12 +118,15 @@ export default {
     playCard(player, card) {
 
     },
-    drawCard(player) {
-
+    addCardToHand(card) {
+      this.currentPlayer.cards.push(card)
     },
   },
 };
 
 </script>
 <style>
+.footer {
+  overflow-y: scroll;
+}
 </style>

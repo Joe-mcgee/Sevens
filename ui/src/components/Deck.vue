@@ -1,6 +1,6 @@
 <template>
   <div class="deck">
-    <Card :card="deck[0]" :faceDown="true" />
+    <Card :faceDown="true" :card="deck[0]" @clicked="shiftOffDeckAndPass" />
   </div>
 </template>
 <script>
@@ -14,6 +14,12 @@ export default {
   },
   data() {
     return {}
+  },
+  methods: {
+  	shiftOffDeckAndPass(card) {
+  		this.deck.shift()
+  		this.$emit('clicked', card)
+  	}
   }
 }
 

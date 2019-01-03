@@ -1,6 +1,6 @@
 <template>
   <div class="card">
-    <v-btn v-if="faceDown" @click="draw">Draw</v-btn>
+    <v-btn v-if="faceDown" @click="draw(card)">Draw</v-btn>
     <v-card v-else>
       {{card}}
     </v-card>
@@ -15,6 +15,12 @@ export default {
   data() {
     return {
 
+    }
+  },
+  methods: {
+    draw(card) {
+      console.log(card)
+      this.$emit('clicked', card)
     }
   }
 }
