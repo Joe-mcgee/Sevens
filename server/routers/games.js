@@ -15,7 +15,6 @@ module.exports = () => {
   router.post('/new', async (req, res) => {
     let io = req.app.get('socketio');
     const user = await res.locals.db.collection('users').findOne({ name: req.body.userName })
-    console.log('user', user)
     const data = {
       _id: res.locals.idGen.next().value,
       isOpen: true,
@@ -36,9 +35,7 @@ module.exports = () => {
   });
 
   router.get('/:gameid', async (req, res) => {
-    console.log(req.params.gameid)
     const game = await res.locals.db.collection('games').findOne({ _id: Number(req.params.gameid) })
-    console.log('game', game)
     res.json({ game })
   })
 
@@ -47,7 +44,6 @@ module.exports = () => {
     const idAsNum = Number(req.params.gameid);
     const playerId = req.body.playerId
     res.locals.db.collection('games').findOneAndUpdate({ _id: idAsNum }, { $push: { player_ids: playerId } }, (err, object) => {
-      console.log(object)
       if (err != null) {
         res.json({ success: false, error: err });
         return;
@@ -63,7 +59,6 @@ module.exports = () => {
     const idAsNum = Number(req.params.gameid)
     let response = await res.locals.db.collection('games')
       .findOne({ _id: idAsNum })
-    console.log('response', response)
     const data = {
       _id: res.locals.idGen.next().value,
       game_id: response._id,
@@ -118,16 +113,13 @@ module.exports = () => {
       round_id: req.params.roundid,
       players: req.body.players,
       deck: req.body.deck,
-      discardPile: [req.body.topCard]
+      discardPile: req.body.topCard
     }
     let address = `/games/${req.params.gameid}`
     let response = await res.locals.db.collection('turns')
       .insertOne(data, (err, dbRes) => {
-        console.log('in insert')
-        console.log(err)
         if (err === null) {
           const address = `/games/${req.params.gameid}`
-          console.log('data', data)
           io.in(address).emit('startTurn', data)
           res.json({ success: true })
           return

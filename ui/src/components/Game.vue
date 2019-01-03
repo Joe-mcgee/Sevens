@@ -1,15 +1,31 @@
 <template>
   <v-container>
-    <v-layout row wrap>
-      <v-flex xs5>
-      </v-flex>
-      <v-flex xs2>
-        <v-btn @click="deal">Deal</v-btn>
-      </v-flex>
-      <v-flex xs5>
-      </v-flex>
-    </v-layout>
-    <v-footer absolute>
+    <v-container v-if="!dealed">
+      <v-layout row wrap>
+        <v-flex xs5>
+        </v-flex>
+        <v-flex xs2>
+          <v-btn @click="deal">Deal</v-btn>
+        </v-flex>
+        <v-flex xs5>
+        </v-flex>
+      </v-layout>
+    </v-container>
+    <v-container>
+      <v-layout row wrap>
+        <v-flex xs2>
+        </v-flex>
+        <v-flex xs4>
+          <Deck :deck="deck" />
+        </v-flex>
+        <DiscardPile :discardPile="discardPile" />
+        <v-flex xs4>
+        </v-flex>
+        <v-flex xs2>
+        </v-flex>
+      </v-layout>
+    </v-container>
+    <v-footer fixed height="175px">
       <Hand :cards="this.currentPlayer.cards" />
     </v-footer>
   </v-container>
@@ -18,6 +34,8 @@
 import { shuffle, newDeck } from '52-deck';
 import axios from 'axios';
 import Hand from './Hand.vue';
+import Deck from './Deck.vue';
+import DiscardPile from './DiscardPile.vue';
 export default {
   props: {
     userId: Number,
@@ -25,13 +43,16 @@ export default {
   },
   components: {
     Hand,
+    Deck,
+    DiscardPile,
   },
   data() {
     return {
+      dealed: false,
       deck: null,
-      discardPile: null,
+      discardPile: [],
       players: [],
-      currentPlayer: {cards: []},
+      currentPlayer: { cards: [] },
       round: null,
 
     };
@@ -55,8 +76,10 @@ export default {
     startTurn(data) {
       this.deck = data.deck;
       this.players = data.players;
+      this.discardPile = null;
       this.discardPile = data.discardPile;
       this.playerHand();
+      this.dealed = !this.dealed
     },
   },
   methods: {
@@ -72,7 +95,7 @@ export default {
         })
         i++;
       }
-      this.discardPile = deck.shift();
+      this.discardPile.push(deck.shift());
       this.deck = deck;
       console.log('this.players', this.players);
       await axios.post(`/api/games/${this.gameId}/rounds/${this.roundId}/init`, {
@@ -80,8 +103,6 @@ export default {
         deck: this.deck,
         topCard: this.discardPile,
       });
-
-      
     },
     playerHand() {
       this.players.forEach((player) => {
