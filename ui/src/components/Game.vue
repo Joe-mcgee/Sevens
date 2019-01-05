@@ -26,7 +26,7 @@
       </v-layout>
     </v-container>
     <v-footer class="footer" fixed height="175px">
-      <Hand :cards="this.currentPlayer.cards" @clicked="drawCard(data)" />
+      <Hand :cards="this.currentPlayer.cards" @play="playCard" />
     </v-footer>
   </v-container>
 </template>
@@ -81,6 +81,12 @@ export default {
       this.playerHand();
       this.dealed = !this.dealed
     },
+    newTurn(data) {
+      this.deck = data.deck;
+      this.players = data.players;
+      this.discardPile = data.discardPile;
+      this.playerHand();
+    }
   },
   methods: {
     async deal() {
@@ -115,11 +121,52 @@ export default {
     flip() {
       this.stack.push(this.deck.shift());
     },
-    playCard(player, card) {
+    checkValidity(card) {
+      let topCard = this.discardPile[this.discardPile.length - 1]
+      if (topCard.suite === card.suite) {
+        return true
+      }
+      if (topCard.text === card.text) {
+        return true
+      }
+      if (card.text === '8') {
+        return true
+      }
+      return false
+    },
+    async playCard(data) {
+      let isValidMove = this.checkValidity(data)
+      if (isValidMove) {
+        let updatedDeck = this.currentPlayer.cards.filter((card) => {
+          return data.text === card.text ? data.suite === card.suite ? false : true : true
+        })
+        this.currentPlayer.cards = updatedDeck
+        this.discardPile.push(data)
+        let updatedPlayers = this.players.map((player) => {
+          if (player.id === this.currentPlayer.id) {
+            return this.currentPlayer
+          } else {
+            return player
+          }
+        })
+        this.players = updatedPlayers
+        this.endTurn()
+      } else {
+        console.log('invalid card')
+      }
+
+    },
+    async endTurn() {
+      let response = await axios.post(`/api/games/${this.gameId}/rounds/${this.roundId}/endTurn`, {
+        players: this.players,
+        deck: this.deck,
+        discardPile: this.discardPile
+      })
+      console.log(response)
 
     },
     addCardToHand(card) {
-      this.currentPlayer.cards.push(card)
+      this.currentPlayer.cards.push(card);
     },
   },
 };
@@ -129,4 +176,5 @@ export default {
 .footer {
   overflow-y: scroll;
 }
+
 </style>

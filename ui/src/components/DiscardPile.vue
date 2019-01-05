@@ -1,6 +1,6 @@
 <template>
   <div class="discardPile">
-    <Card :card="discardPile[discardPile.length-1]" :faceDown="false" />
+    <Card :card="discardPile[discardPile.length-1]" :faceDown="false" :readOnly="true" />
   </div>
 </template>
 <script>

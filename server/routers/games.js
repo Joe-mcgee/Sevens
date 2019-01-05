@@ -124,8 +124,32 @@ module.exports = () => {
           res.json({ success: true })
           return
         } else {
+          res.json({ success: false })
+          return
+        }
+      })
+  })
+
+  router.post('/:gameid/rounds/:roundid/endTurn', async (req, res) => {
+    let io = req.app.get("socketio")
+    let data = {
+      _id: res.locals.idGen.next().value,
+      game_id: req.params.gameid,
+      round_id: req.params.roundid,
+      players: req.body.players,
+      deck: req.body.deck,
+      discardPile: req.body.discardPile
+    }
+
+    let response = res.locals.db.collection('turns')
+      .insertOne(data, (err, dbRes) => {
+        if (err != null) {
+          console.log(err)
           res.json({success: false})
           return
+        } else {
+          io.in(`/games/${req.params.gameid}`).emit('newTurn', data)
+          res.json({success: true})
         }
       })
   })

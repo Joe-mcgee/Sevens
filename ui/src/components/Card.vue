@@ -1,7 +1,10 @@
 <template>
   <div class="card">
     <v-btn v-if="faceDown" @click="draw(card)">Draw</v-btn>
-    <v-card v-else>
+    <v-card v-if="readOnly">
+      {{card}}
+    </v-card>
+    <v-card v-if="!faceDown && !readOnly" @click="play(card)">
       {{card}}
     </v-card>
   </div>
@@ -11,6 +14,7 @@ export default {
   props: {
     card: Object,
     faceDown: Boolean,
+    readOnly: Boolean,
   },
   data() {
     return {
@@ -21,6 +25,9 @@ export default {
     draw(card) {
       console.log(card)
       this.$emit('clicked', card)
+    },
+    play(card) {
+      this.$emit('play', card)
     }
   }
 }

@@ -2,7 +2,7 @@
   <v-container>
     <v-layout row wrap>
     <v-flex class="xs-custom" v-for="card in cards">
-      <Card :card="card" :faceDown="false" />
+      <Card :card="card" :faceDown="false" @play="shiftCardAndEmitEvent" />
     </v-flex>
   </v-layout>
   </v-container>
@@ -20,6 +20,12 @@ export default {
   data() {
     return {};
   },
+  methods: {
+    shiftCardAndEmitEvent(card) {
+      console.log(card)
+      this.$emit('play', card)
+    }
+  }
 };
 
 </script>
