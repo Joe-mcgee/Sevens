@@ -54,6 +54,7 @@ export default {
       players: [],
       currentPlayer: { cards: [] },
       round: null,
+      isTurn: false
 
     };
   },
@@ -66,6 +67,7 @@ export default {
       let playerObj = {
         id: player,
         cards: [],
+        isTurn: false,
       }
       this.players.push(playerObj);
     })
@@ -76,13 +78,36 @@ export default {
     startTurn(data) {
       this.deck = data.deck;
       this.players = data.players;
-      this.discardPile = null;
+      this.players.forEach((player) => {
+        if (player.id === this.userId) {
+          if (player.isTurn === true) {
+            this.isTurn = true
+          }
+        }
+      })
       this.discardPile = data.discardPile;
       this.playerHand();
       this.dealed = !this.dealed
     },
     newTurn(data) {
       this.deck = data.deck;
+      let iterator;
+      console.log(data.players)
+      data.players.forEach((player, i) => {
+        if (player.isTurn === true) {
+          data.players[i].isTurn = false;
+          iterator = (i + 1) % data.players.length;
+          console.log(iterator);
+        }
+      })
+      data.players[iterator].isTurn = true;
+      data.players.forEach((player) => {
+        if (player.id === this.userId) {
+          if (player.isTurn === true) {
+            this.isTurn = true
+          }
+        }
+      })
       this.players = data.players;
       this.discardPile = data.discardPile;
       this.playerHand();
@@ -103,16 +128,25 @@ export default {
       }
       this.discardPile.push(deck.shift());
       this.deck = deck;
-      console.log('this.players', this.players);
+      this.players[this.setTurnOrder()].isTurn = true
       await axios.post(`/api/games/${this.gameId}/rounds/${this.roundId}/init`, {
         players: this.players,
         deck: this.deck,
         topCard: this.discardPile,
       });
     },
+    setTurnOrder() {
+      let dealerId = this.userId
+      let result;
+      this.players.forEach((player, i) => {
+        if (player.id === dealerId) {
+          result = i + 1
+        }
+      })
+      return result
+    },
     playerHand() {
       this.players.forEach((player) => {
-        console.log(player)
         if (player.id == this.userId) {
           this.currentPlayer = player;
         }
@@ -122,6 +156,9 @@ export default {
       this.stack.push(this.deck.shift());
     },
     checkValidity(card) {
+      if (this.isTurn === false) {
+        return false
+      }
       let topCard = this.discardPile[this.discardPile.length - 1]
       if (topCard.suite === card.suite) {
         return true
@@ -162,6 +199,7 @@ export default {
         deck: this.deck,
         discardPile: this.discardPile
       })
+      this.isTurn = false
       console.log(response)
 
     },
